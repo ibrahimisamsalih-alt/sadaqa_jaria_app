@@ -1,0 +1,73 @@
+workflows:
+  ios-workflow:
+    name: iOS Build
+    max_build_duration: 120
+    environment:
+      ios_signing:
+        provisioning_profiles:
+          - name: azkar_app_profile
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install -g eas-cli
+          pnpm install
+      - name: Build iOS
+        script: |
+          eas build --platform ios --non-interactive
+    artifacts:
+      - build/ios/ipa/**/*.ipa
+    publishing:
+      app_store_connect:
+        auth: automatic
+
+  android-workflow:
+    name: Android Build
+    max_build_duration: 120
+    environment:
+      android_signing:
+        - keystore_reference
+      java: default
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install -g eas-cli
+          pnpm install
+      - name: Build Android
+        script: |
+          eas build --platform android --non-interactive
+    artifacts:
+      - build/android/app/release/**/*.aab
+      - build/android/app/release/**/*.apk
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+
+  release-workflow:
+    name: Release Build
+    max_build_duration: 120
+    environment:
+      ios_signing:
+        provisioning_profiles:
+          - name: azkar_app_profile
+      android_signing:
+        - keystore_reference
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install -g eas-cli
+          pnpm install
+      - name: Build and Release
+        script: |
+          eas build --platform all --auto-submit
+    artifacts:
+      - build/ios/ipa/**/*.ipa
+      - build/android/app/release/**/*.aab
+    publishing:
+      app_store_connect:
+        auth: automatic
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: production
